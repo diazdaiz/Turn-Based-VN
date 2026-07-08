@@ -1,16 +1,21 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-public class VNManager : MonoBehaviour
-{
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
+public class VNManager : MonoBehaviour {
+    public List<VNDialogueSequence.DialogueBlock> Log { get; private set; }
+    public int CurrentIndex;
+    VNDialogueSequence dialogueSequence;
+
+    public void Run(VNDialogueSequence dialogueSequence) {
+        this.dialogueSequence = dialogueSequence;
+        CurrentIndex = 0;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+    public void Continue() {
+
+    }
+
+    public void FastForward() {
+        //for
     }
 }

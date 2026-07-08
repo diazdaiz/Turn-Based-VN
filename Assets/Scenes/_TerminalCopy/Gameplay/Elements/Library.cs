@@ -13,15 +13,15 @@ public partial class Library : MonoBehaviour {
         get {
             if (elementsPath == null) {
                 elementsPath = new();
-                List<Type> cardsType = GetDerivedTypes<Card>();
+                List<Type> cardsType = GetDerivedTypes<Skill>();
                 for (int i = 0; i < cardsType.Count; i++) {
                     elementsPath.Add(cardsType[i], $"res://Assets/Game/Exploration/Elements/Card/Cards/{cardsType[i].Name}.tscn");
                 }
-                List<Type> relicsType = GetDerivedTypes<Relic>();
+                List<Type> relicsType = GetDerivedTypes<Equipment>();
                 for (int i = 0; i < relicsType.Count; i++) {
                     elementsPath.Add(relicsType[i], $"res://Assets/Game/Exploration/Elements/Relic/Relics/{relicsType[i].Name}.tscn");
                 }
-                List<Type> potionType = GetDerivedTypes<Potion>();
+                List<Type> potionType = GetDerivedTypes<Consumable>();
                 for (int i = 0; i < potionType.Count; i++) {
                     elementsPath.Add(potionType[i], $"res://Assets/Game/Exploration/Elements/Potion/Potions/{potionType[i].Name}.tscn");
                 }

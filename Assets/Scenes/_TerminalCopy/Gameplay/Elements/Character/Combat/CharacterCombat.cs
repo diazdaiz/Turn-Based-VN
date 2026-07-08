@@ -1,45 +1,42 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CharacterCombat : MonoBehaviour {
     public int MaxHealth { get; private set; }
+    public CharacterStats Stats { get; set; }
+    public List<Skill> Skills { get; set; }
+    public int ActionValue { get; set; }
     public int HP {
         get {
-            return stats.HP;
+            return Stats.HP;
         }
         set {
-            stats.HP = value;
-            if (stats.HP > MaxHealth) {
-                stats.HP = MaxHealth;
+            Stats.HP = value;
+            if (Stats.HP > MaxHealth) {
+                Stats.HP = MaxHealth;
             }
-            if (stats.HP < 0) {
-                stats.HP = 0;
-            }
-        }
-    }
-    public int block {
-        get {
-            return Statuses.ContainsKey(typeof(Status.Block)) ? Statuses[typeof(Status.Block)].Stack : 0;
-        }
-        set {
-            if (Statuses.ContainsKey(typeof(Status.Block))) {
-                Statuses[typeof(Status.Block)].Stack = value;
-            }
-            else {
-                combat.DoAfter(new CombatAction.ApplyStatus(this, new Status.Block(this, value)), combat.CurrentAction[^1]);
+            if (Stats.HP < 0) {
+                Stats.HP = 0;
             }
         }
     }
     public bool isAlive => HP > 0;
 
-    [SerializeField] CharacterStats stats;
+    public Action<CombatAction.CharacterTurn> OnTurnStart;
+    public Action<CombatAction.Attack> OnAttack;
+    public Action<CombatAction.Damage> OnTakeDamage;
+    public Action<CombatAction.KillCharacter> OnDeath;
 
-    [System.Serializable]
+    [SerializeField] CharacterStats stats;
+    [SerializeField] List<Skill> skills = new();
+
+    [Serializable]
     public class CharacterStats {
-        public int HP = 100;
-        public int ATK = 50;
-        public int DEF = 10;
-        public int SPD = 100;
+        public int HP = 1397;
+        public int ATK = 523;
+        public int DEF = 485;
+        public int SPD = 101;
     }
 
     public System.Collections.Generic.Dictionary<Type, Status> Statuses {
@@ -59,7 +56,12 @@ public class CharacterCombat : MonoBehaviour {
 
     public virtual void Start() {
         // untuk sementara, MaxHealth di set dari HP awal dari stats
-        MaxHealth = stats.HP;
+        Stats = new() {
+            HP = stats.HP,
+            SPD = stats.SPD,
+            ATK = stats.ATK,
+            DEF = stats.DEF,
+        };
         if (initialStatuses == null) {
             initialStatuses = new();
         }
@@ -68,16 +70,45 @@ public class CharacterCombat : MonoBehaviour {
         }
     }
 
-    public void SubscribeDamage() {
-        CombatAction.AfterTriggers[typeof(CombatAction.Damage)] += OnDamaged;
+    public void InitiateSkills() {
+        Skills = new();
+        for (int i = 0; i < skills.Count; i++) {
+            Skills.Add(Instantiate(skills[i]));
+        }
     }
 
-    public virtual void OnDamaged(CombatAction combatAction) {
+    public void SubscribeCombatEvents() {
+        CombatAction.OnTriggersFirst[typeof(CombatAction.CharacterTurn)] += OnBeginCharacterTurn;
+        CombatAction.AfterTriggers[typeof(CombatAction.Damage)] += OnCharacterDamaged;
+        CombatAction.AfterTriggers[typeof(CombatAction.Attack)] += OnCharacterAttacked;
+        CombatAction.AfterTriggers[typeof(CombatAction.KillCharacter)] += OnCharacterKilled;
+    }
+
+    public virtual void OnBeginCharacterTurn(CombatAction combatAction) {
+        if (combatAction is CombatAction.CharacterTurn characterTurn && characterTurn.Character == this) {
+            OnTurnStart?.Invoke(characterTurn);
+        }
+    }
+
+    public virtual void OnCharacterAttacked(CombatAction combatAction) {
+        if (combatAction is CombatAction.Attack attack && attack.Attacker == this) {
+            OnAttack?.Invoke(attack);
+        }
+    }
+
+    public virtual void OnCharacterDamaged(CombatAction combatAction) {
         if (combatAction is CombatAction.Damage damage && damage.Receiver == this) {
+            OnTakeDamage?.Invoke(damage);
             if (HP <= 0) {
                 combat.DoAfter(new CombatAction.KillCharacter(this), combatAction);
-                CombatAction.AfterTriggers[typeof(CombatAction.Damage)] -= OnDamaged;
+                CombatAction.AfterTriggers[typeof(CombatAction.Damage)] -= OnCharacterDamaged;
             }
+        }
+    }
+
+    public virtual void OnCharacterKilled(CombatAction combatAction) {
+        if (combatAction is CombatAction.KillCharacter killCharacter && killCharacter.character == this) {
+            OnDeath?.Invoke(killCharacter);
         }
     }
 

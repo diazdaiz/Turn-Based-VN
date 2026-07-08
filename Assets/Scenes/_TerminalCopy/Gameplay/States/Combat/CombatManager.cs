@@ -1,128 +1,60 @@
-using Dz.Random;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public partial class CombatManager : MonoBehaviour {
-    #region Variables
-    #region Properties
     public static CombatManager Instance { get; private set; }
-    public List<CombatAction> CurrentAction => combatActionManager.CurrentTaskWithDepth?.ConvertAll(x => (CombatAction)x);
+    public List<CombatAction> CurrentActionAllDepths => combatActionManager.CurrentTaskWithDepth?.ConvertAll(x => (CombatAction)x);
 
     //Character
-    public Hero Hero => exploration.Hero;
-    public List<Enemy> Enemies {
-        get {
-            return enemies;
-        }
-        set {
-            enemies = new List<Enemy>(value);
-        }
-    }
+    public List<CharacterCombat> PlayerTeam { get; private set; }
+    public List<CharacterCombat> EnemyTeam { get; private set; }
 
-    //Cards
-    public System.Collections.Generic.Dictionary<Card, List<Card>> CardsPileLocation { get; private set; }
-    public List<Card> DrawPile { get; private set; }
-    public List<Card> HandPile { get; private set; }
-    public List<Card> SelectionPile { get; private set; }
-    public List<Card> PlayedPile { get; private set; }
-    public List<Card> DiscardPile { get; private set; }
-    public List<Card> ExhaustedPile { get; private set; }
-    public CombatCardSelection CardSelection => cardSelection;
-    public Enemy PotentialTarget { get; set; }
+    //Skill
+    public CharacterCombat PotentialTarget { get; set; }
+    public List<Skill> SkillsActivationOrder { get; set; } //0 <- n, 0 yang sedang aktif
+
+    //Turn Order
+    public CombatAction.CharacterTurn CurrentCharacterTurn { get; set; }
+    public List<CombatAction.CharacterTurn> CharacterTurnsInOrder { get; set; } //diambil dari awal
+    public int SmallestActionValue { get; set; }
 
     //Other Properties
-    GameplayManager exploration => GameplayManager.Instance;
-    public List<Card> Deck => exploration.Deck;
-    public List<Relic> Relics => exploration.Relics;
-    public bool IsElite { get; set; } = false;
+    GameplayManager gameplay => GameplayManager.Instance;
     public Action EndingCombat { get; set; }
-    public int MaxEnergy {
+    public int MaxSkillPoint {
         get {
-            return maxEnergy;
+            return maxSkillPoint;
         }
         set {
-            maxEnergy = value;
+            maxSkillPoint = value;
         }
     }
-    public int MaxCardOnHand => maxCardOnHand;
-    public int Energy { get; set; }
-    public int Turn { get; set; }
+    public int SkillPoint { get; set; }
     public bool IsCombating { get; set; } // combating combating combating combating combating combating
 
-    #endregion
-
-    #region field
     [SerializeField] bool testCombat = false;
-    [SerializeField] List<PossibleEnemiesSet> possibleEnemiesSetPool;
-    [SerializeField] List<PossibleEnemiesSet> possibleElitesSetPool;
-    [SerializeField] List<Enemy> enemies;
-    [SerializeField] int maxEnergy = 3;
-    [SerializeField] int maxCardOnHand = 10;
-    [SerializeField] GameObject CharacterSpawnNode;
-    [SerializeField] CombatCardSelection cardSelection;
-
-    List<PossibleEnemiesSet> currentPossibleEnemiesSetPool;
-    List<PossibleEnemiesSet> currentPossibleElitesSetPool;
+    [SerializeField] int maxSkillPoint = 5;
+    [SerializeField] int startingSkillPoint = 3;
+    [SerializeField] PlayerCombatController cardSelection;
 
     CombatActionManager combatActionManager;
-    #endregion
-    #endregion
 
     #region Methods
     #region Initiate combat properties
-    public PossibleEnemiesSet GetPossibleEnemiesSetFromPool(bool isElite) {
-        if (currentPossibleElitesSetPool == null || currentPossibleElitesSetPool.Count == 0) {
-            currentPossibleElitesSetPool = new(possibleElitesSetPool);
+    public void SetCombatInitialProperties(List<CharacterCombat> playerTeam, List<CharacterCombat> enemyTeam, bool Ambushed) {
+        ResetCombat();
+        for (int i = 0; i < playerTeam.Count; i++) {
+            PlayerTeam.Add(playerTeam[i]);
+            PlayerTeam[i].InitiateSkills();
+            PlayerTeam[i].SubscribeCombatEvents();
         }
-        if (currentPossibleEnemiesSetPool == null || currentPossibleEnemiesSetPool.Count == 0) {
-            currentPossibleEnemiesSetPool = new(possibleEnemiesSetPool);
+        for (int i = 0; i < EnemyTeam.Count; i++) {
+            EnemyTeam[i].InitiateSkills();
+            EnemyTeam[i].SubscribeCombatEvents();
+            EnemyTeam[i].ActionValue = (int)(10000f / EnemyTeam[i].Stats.SPD);
         }
-        List<PossibleEnemiesSet> Set() {
-            if (isElite) {
-                return currentPossibleElitesSetPool;
-            }
-            else {
-                return currentPossibleEnemiesSetPool;
-            }
-        }
-
-        List<Randomizable> randomizables = new();
-        for (int i = 0; i < Set().Count; i++) {
-            randomizables.Add(new(i, Set()[i].Weight));
-        }
-
-        int index = Randomizer.Randomize<int>(randomizables);
-        PossibleEnemiesSet possibleEnemiesSet = Set()[index];
-        Set().RemoveAt(index);
-
-        return possibleEnemiesSet;
-    }
-    #endregion
-
-    #region Event
-    public void BeginEvent() {
-        Game.Scene.MinimizeSubscene(GameplaySubscenes.CombatRewards);
-        CardsPileLocation = new();
-        PossibleEnemiesSet roomPossibleEnemiesSetPool = GetPossibleEnemiesSetFromPool(IsElite);
-        for (int i = 0; i < roomPossibleEnemiesSetPool.EnemiesAndSpawnLocation.Count; i++) {
-            Vector2 spawnLocation = roomPossibleEnemiesSetPool.EnemiesAndSpawnLocation[i].SpawnLocation;
-            Enemy enemy = Instantiate(roomPossibleEnemiesSetPool.EnemiesAndSpawnLocation[i].Enemy, CharacterSpawnNode.transform);
-            Enemies.Add(enemy);
-            Enemies[i].SubscribeDamage();
-            enemy.transform.position = new Vector3(spawnLocation.x, spawnLocation.y, 0);
-        }
-        Hero.SubscribeDamage();
-
-        StartCombat();
-    }
-
-    public bool CanProcceedNextRoom() {
-        return !IsCombating;
-    }
-
-    public object GetEvent() {
-        return this;
+        SkillPoint = startingSkillPoint;
     }
     #endregion
 
@@ -132,34 +64,42 @@ public partial class CombatManager : MonoBehaviour {
         IsCombating = true;
     }
 
-    public int CalculateAttack(CharacterCombat attacker, CharacterCombat receiver, int baseDamage) {
+    public void AddCharacterTurn(CharacterCombat character, bool Ambushed = false) {
+        character.ActionValue = (int)(10000f / character.Stats.SPD * (Ambushed ? 1.2f : 1f));
+        for (int i = 0; i < CharacterTurnsInOrder.Count; i++) {
+            if (CharacterTurnsInOrder[0].Character.ActionValue < character.ActionValue) {
+                continue;
+            }
+            if (PlayerTeam.Contains(character) || EnemyTeam.Contains(character)) {
+                CharacterTurnsInOrder.Insert(i, new CombatAction.CharacterTurn(character));
+                return;
+            }
+            else {
+                Debug.LogError("Character engga di player team & enemy team");
+                return;
+            }
+        }
+        CharacterTurnsInOrder.Add(new CombatAction.CharacterTurn(character));
+    }
+
+    public int CalculateAttack(CharacterCombat attacker, CharacterCombat receiver, int damagePercentage) {
         //relic, status
         int strength = attacker.Statuses.ContainsKey(typeof(Status.Strength)) ? attacker.Statuses[typeof(Status.Strength)].Stack : 0;
         bool weak = attacker.Statuses.ContainsKey(typeof(Status.Weak));
-        bool doubleAttackDamage = attacker.Statuses.ContainsKey(typeof(Status.DoubleAttackDamage));
-        int vigor = attacker.Statuses.ContainsKey(typeof(Status.Vigor)) ? attacker.Statuses[typeof(Status.Vigor)].Stack : 0;
 
         bool vulnerable = false;
         if (receiver != null) {
             vulnerable = receiver.Statuses.ContainsKey(typeof(Status.Vulnerable));
         }
-        int damage = Mathf.FloorToInt((baseDamage + strength + vigor) * (weak ? 0.75f : 1f) * (vulnerable ? 1.5f : 1f) * (doubleAttackDamage ? 2f : 1f));
-        bool intangible = false;
-        if (receiver != null) {
-            intangible = receiver.Statuses.ContainsKey(typeof(Status.Intangible));
-        }
-        if (intangible) {
-            damage = Mathf.Min(damage, 1);
-        }
+        int damage = Mathf.FloorToInt((damagePercentage * attacker.Stats.ATK + strength) * (weak ? 0.75f : 1f) * (vulnerable ? 1.5f : 1f));
 
         // ga bisa kurang dari 0
         return Mathf.Max(0, damage);
     }
 
     public int CalculateBlockGain(CharacterCombat character, int baseBlockGain) {
-        int dexterity = character.Statuses.ContainsKey(typeof(Status.Dexterity)) ? character.Statuses[typeof(Status.Dexterity)].Stack : 0;
         bool frail = character.Statuses.ContainsKey(typeof(Status.Frail));
-        int block = Mathf.RoundToInt((baseBlockGain + dexterity) * (frail ? 0.75f : 1f));
+        int block = Mathf.RoundToInt(baseBlockGain * (frail ? 0.75f : 1f));
         return Mathf.Max(0, block);
     }
 
@@ -207,35 +147,17 @@ public partial class CombatManager : MonoBehaviour {
         combatActionManager.AddTaskOnLast(Do, On);
     }
 
-    public Card CreateCard(Type cardType, bool upgraded, List<Card> on) {
-        Card card = Card.Instantiate(cardType);
-        card.IsUpgraded = upgraded;
-        card.transform.parent = transform;
-        on.Add(card);
-        CardsPileLocation.Add(card, on);
-        return card;
+    public Skill CreateSkill(Type skillType, List<Skill> on) {
+        Skill skill = Skill.Instantiate(skillType);
+        skill.transform.parent = transform;
+        on.Add(skill);
+        return skill;
     }
 
-    public Card DuplicateCard(Card card, List<Card> on) {
-        Card duplicatedCard = Instantiate(card, transform);
-        on.Add(duplicatedCard);
-        CardsPileLocation.Add(duplicatedCard, on);
-        return duplicatedCard;
-    }
-
-    public void MoveCard(Card card, List<Card> to) {
-        MoveCards(new() { card }, to);
-    }
-
-    public void MoveCards(List<Card> cards, List<Card> to) {
-        for (int i = cards.Count - 1; i >= 0; i--) {
-            Card card = cards[i];
-            to.Add(card);
-            if (CardsPileLocation.ContainsKey(card)) {
-                CardsPileLocation[card].Remove(card); //from
-            }
-            CardsPileLocation[card] = to;
-        }
+    public Skill CopySkill(Skill skill, List<Skill> on) {
+        Skill duplicatedSkill = Instantiate(skill, transform);
+        on.Add(duplicatedSkill);
+        return duplicatedSkill;
     }
 
     public void Shuffle<T>(IList<T> list) {
@@ -250,62 +172,33 @@ public partial class CombatManager : MonoBehaviour {
     }
 
     public void ResetCombat() {
-        if (DrawPile != null) {
-            for (int i = 0; i < DrawPile.Count; i++) {
-                Destroy(DrawPile[i]);
-            }
-        }
-        if (HandPile != null) {
-            for (int i = 0; i < HandPile.Count; i++) {
-                Destroy(HandPile[i]);
-            }
-        }
-        if (SelectionPile != null) {
-            for (int i = 0; i < SelectionPile.Count; i++) {
-                Destroy(SelectionPile[i]);
-            }
-        }
-        if (PlayedPile != null) {
-            for (int i = 0; i < PlayedPile.Count; i++) {
-                Destroy(PlayedPile[i]);
-            }
-        }
-        if (DiscardPile != null) {
-            for (int i = 0; i < DiscardPile.Count; i++) {
-                Destroy(DiscardPile[i]);
-            }
-        }
-        if (ExhaustedPile != null) {
-            for (int i = 0; i < ExhaustedPile.Count; i++) {
-                Destroy(ExhaustedPile[i]);
-            }
-        }
+        SkillPoint = 0;
 
-        DrawPile = new();
-        HandPile = new();
-        SelectionPile = new();
-        PlayedPile = new();
-        DiscardPile = new();
-        ExhaustedPile = new();
-
-        Energy = 0;
-
-        if (exploration != null) {
-            Hero.Statuses = new();
+        for (int i = 0; i < PlayerTeam.Count; i++) {
+            for (int j = PlayerTeam[i].Skills.Count - 1; j >= 0; j--) {
+                Destroy(PlayerTeam[i].Skills[j]);
+            }
+            PlayerTeam[i].Skills = new();
+            PlayerTeam[i].Statuses = new();
+        }
+        for (int i = 0; i < EnemyTeam.Count; i++) {
+            for (int j = EnemyTeam[i].Skills.Count - 1; j >= 0; j--) {
+                Destroy(EnemyTeam[i].Skills[j]);
+            }
+            EnemyTeam[i].Skills = new();
+            EnemyTeam[i].Statuses = new();
         }
         CombatAction.ResetTiggers();
         // CombatAction.
-        for (int i = 0; i < Enemies.Count; i++) {
-            Destroy(Enemies[i]);
-        }
-        Enemies = new();
+        PlayerTeam = new();
+        EnemyTeam = new();
+        CharacterTurnsInOrder = new();
 
         combatActionManager = new();
         combatActionManager.Start();
     }
     #endregion
 
-    #region Godot
     public void Start() {
         if (Instance != null && Instance != this) {
             Destroy(this);
@@ -329,10 +222,9 @@ public partial class CombatManager : MonoBehaviour {
         combatActionManager.FixedUpdate(Time.fixedDeltaTime);
     }
     #endregion
-    #endregion
 
     #region kotretan
-    // note krotretan
+    // (abaikan)
     //trigger ada yang before ada yang after
     // when some combat action activated, which is when started, trigger yang before & after
     // tapi action combatnya baru kebuat ditambahin, tiap action combat punya tipe

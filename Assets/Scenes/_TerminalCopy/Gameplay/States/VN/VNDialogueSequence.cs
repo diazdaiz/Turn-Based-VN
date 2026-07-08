@@ -1,16 +1,15 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-public class VNDialogueSequence : MonoBehaviour
-{
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+public class VNDialogueSequence : MonoBehaviour {
+    public List<DialogueBlock> Sequence => sequence;
+    [SerializeField] List<DialogueBlock> sequence;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+    [System.Serializable]
+    public class DialogueBlock {
+        public CharacterVN character;
+        public CharacterVN.CharacterVNExpression expression; //nanti correspond ke gmn 
+        public AudioClip dub;
+        public string text;
     }
 }

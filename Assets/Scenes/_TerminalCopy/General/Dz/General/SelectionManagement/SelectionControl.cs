@@ -1,177 +1,177 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Dz.SelectionManagement {
     public partial class SelectionControl : MonoBehaviour {
-        // [SerializeField] SelectionManager selectionManager;
-        // [Header("Input")]
-        // [SerializeField] bool useKeyboard = true;
-        // [SerializeField] bool useMouse = true;
+        [SerializeField] SelectionManager selectionManager;
+        [Header("Input")]
+        [SerializeField] bool useKeyboard = true;
+        [SerializeField] bool useMouse = true;
 
-        // [Header("Keyboard Navigation")]
-        // [SerializeField] KeyCode nextKey = KeyCode.DownArrow;
-        // [SerializeField] KeyCode previousKey = KeyCode.UpArrow;
-        // [SerializeField] KeyCode selectKey = KeyCode.Return;
-        // //kalau perlu confirm for action
-        // [SerializeField] KeyCode confirmKey = KeyCode.Space;
+        [Header("Keyboard Navigation")]
+        [SerializeField] KeyCode nextKey = KeyCode.DownArrow;
+        [SerializeField] KeyCode previousKey = KeyCode.UpArrow;
+        [SerializeField] KeyCode selectKey = KeyCode.Return;
+        //kalau perlu confirm for action
+        [SerializeField] KeyCode confirmKey = KeyCode.Space;
 
-        // [Header("Mouse Navigation")]
-        // //kalau perlu confirm for action
+        [Header("Mouse Navigation")]
+        //kalau perlu confirm for action
 
-        // List<Selection> selections {
-        //     get {
-        //         return selectionManager.Selections;
-        //     }
-        // }
+        List<Selection> selections {
+            get {
+                return selectionManager.Selections;
+            }
+        }
 
-        // Camera cachedMainCamera;
-        // Vector3 lastMousePos;
+        Camera cachedMainCamera;
+        Vector3 lastMousePos;
 
-        // Selection RaycastSelectionUnderMouse() {
-        //     if (cachedMainCamera == null) cachedMainCamera = Camera.main;
-        //     if (cachedMainCamera == null) return null;
+        Selection RaycastSelectionUnderMouse() {
+            if (cachedMainCamera == null) cachedMainCamera = Camera.main;
+            if (cachedMainCamera == null) return null;
 
-        //     Vector3 screenPos = Input.mousePosition;
+            Vector3 screenPos = UnityEngine.Input.mousePosition;
 
-        //     // 2D
-        //     Vector3 worldPoint3D = cachedMainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10));
-        //     //Debug.Log(screenPos);
-        //     //Debug.Log(worldPoint2D);
-        //     RaycastHit2D hit2d = Physics2D.Raycast(worldPoint3D, cachedMainCamera.transform.forward);
-        //     if (hit2d.collider != null) {
-        //         //Debug.Log(hit2d.collider);
-        //         return hit2d.collider.GetComponentInParent<Selection>() ?? hit2d.collider.GetComponent<Selection>();
-        //     }
+            // 2D
+            Vector3 worldPoint3D = cachedMainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10));
+            //Debug.Log(screenPos);
+            //Debug.Log(worldPoint2D);
+            RaycastHit2D hit2d = Physics2D.Raycast(worldPoint3D, cachedMainCamera.transform.forward);
+            if (hit2d.collider != null) {
+                //Debug.Log(hit2d.collider);
+                return hit2d.collider.GetComponentInParent<Selection>() ?? hit2d.collider.GetComponent<Selection>();
+            }
 
-        //     // 3D
-        //     Ray ray = cachedMainCamera.ScreenPointToRay(screenPos);
-        //     RaycastHit hit3d;
-        //     if (Physics.Raycast(ray, out hit3d)) {
-        //         Debug.Log("ada");
-        //         return hit3d.collider.GetComponentInParent<Selection>() ?? hit3d.collider.GetComponent<Selection>();
-        //     }
+            // 3D
+            Ray ray = cachedMainCamera.ScreenPointToRay(screenPos);
+            RaycastHit hit3d;
+            if (Physics.Raycast(ray, out hit3d)) {
+                return hit3d.collider.GetComponentInParent<Selection>() ?? hit3d.collider.GetComponent<Selection>();
+            }
 
-        //     return null;
-        // }
+            return null;
+        }
 
-        // int GetIndexOf(Selection selection) {
-        //     if (selections == null || selection == null) return -1;
-        //     for (int i = 0; i < selections.Count; i++) {
-        //         if (selections[i] == selection) return i;
-        //     }
+        int GetIndexOf(Selection selection) {
+            if (selections == null || selection == null) return -1;
+            for (int i = 0; i < selections.Count; i++) {
+                if (selections[i] == selection) return i;
+            }
 
-        //     return -1;
-        // }
+            return -1;
+        }
 
-        // void HandleKeyboard() {
-        //     if (Input.GetKeyDown(nextKey)) {
-        //         selectionManager.HoverNext();
-        //     }
+        void HandleKeyboard() {
+            if (UnityEngine.Input.GetKeyDown(nextKey)) {
+                selectionManager.HoverNext();
+            }
 
-        //     if (Input.GetKeyDown(previousKey)) {
-        //         selectionManager.HoverPrevious();
-        //     }
+            if (UnityEngine.Input.GetKeyDown(previousKey)) {
+                selectionManager.HoverPrevious();
+            }
 
-        //     if (selectionManager.ConfirmForAction) {
-        //         if (Input.GetKeyDown(selectKey)) {
-        //             if (!selections[selectionManager.CurrentSelectionsIndex].IsSelected) {
-        //                 selectionManager.Select(selectionManager.CurrentSelectionsIndex);
-        //             }
-        //             else if (selections[selectionManager.CurrentSelectionsIndex].IsSelected) {
-        //                 selectionManager.Unselect(selectionManager.CurrentSelectionsIndex);
-        //             }
-        //         }
-        //         if (Input.GetKeyDown(confirmKey)) {
-        //             selectionManager.ConfirmSelections();
-        //         }
-        //     }
-        //     else {
-        //         if (Input.GetKeyDown(selectKey)) {
-        //             selectionManager.Select(selectionManager.CurrentSelectionsIndex);
-        //             selectionManager.ConfirmSelections();
-        //         }
-        //     }
-        // }
+            if (selectionManager.ConfirmForAction) {
+                if (UnityEngine.Input.GetKeyDown(selectKey)) {
+                    if (!selections[selectionManager.CurrentSelectionsIndex].IsSelected) {
+                        selectionManager.Select(selectionManager.CurrentSelectionsIndex);
+                    }
+                    else if (selections[selectionManager.CurrentSelectionsIndex].IsSelected) {
+                        selectionManager.Unselect(selectionManager.CurrentSelectionsIndex);
+                    }
+                }
+                if (UnityEngine.Input.GetKeyDown(confirmKey)) {
+                    selectionManager.ConfirmSelections();
+                }
+            }
+            else {
+                if (UnityEngine.Input.GetKeyDown(selectKey)) {
+                    selectionManager.Select(selectionManager.CurrentSelectionsIndex);
+                    selectionManager.ConfirmSelections();
+                }
+            }
+        }
 
-        // void HandleMouse() {
-        //     Vector3 screenPos = Input.mousePosition;
-        //     Vector3 worldPoint3D = cachedMainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10));
+        void HandleMouse() {
+            Vector3 screenPos = UnityEngine.Input.mousePosition;
+            Vector3 worldPoint3D = cachedMainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10));
 
-        //     Selection hitSelection = RaycastSelectionUnderMouse();
+            Selection hitSelection = RaycastSelectionUnderMouse();
 
-        //     if (Input.GetMouseButtonDown(0)) {
-        //         if (hitSelection != null) {
-        //             if (hitSelection == selectionManager.MouseConfirmSelection && selectionManager.ConfirmForAction) {
-        //                 selectionManager.ConfirmSelections();
-        //                 return;
-        //             }
+            if (UnityEngine.Input.GetMouseButtonDown(0)) {
+                if (hitSelection != null) {
+                    if (hitSelection == selectionManager.MouseConfirmSelection && selectionManager.ConfirmForAction) {
+                        selectionManager.ConfirmSelections();
+                        return;
+                    }
 
-        //             int indexToBeSelected = GetIndexOf(hitSelection);
-        //             if (indexToBeSelected >= 0) {
-        //                 if (selectionManager.ConfirmForAction) {
-        //                     if (hitSelection.IsSelected) {
-        //                         selectionManager.Unselect(indexToBeSelected);
-        //                     }
-        //                     else {
-        //                         selectionManager.Select(indexToBeSelected);
-        //                     }
-        //                 }
-        //                 else {
-        //                     selectionManager.Select(indexToBeSelected);
-        //                     selectionManager.ConfirmSelections();
-        //                 }
-        //             }
-        //         }
-        //         else {
-        //             // clicked outside - optionally unselect when not multipleSelection
-        //             if (!selectionManager.MultipleSelection) {
-        //                 //UnselectAll();
-        //             }
-        //         }
-        //     }
+                    int indexToBeSelected = GetIndexOf(hitSelection);
+                    if (indexToBeSelected >= 0) {
+                        if (selectionManager.ConfirmForAction) {
+                            if (hitSelection.IsSelected) {
+                                selectionManager.Unselect(indexToBeSelected);
+                            }
+                            else {
+                                selectionManager.Select(indexToBeSelected);
+                            }
+                        }
+                        else {
+                            selectionManager.Select(indexToBeSelected);
+                            selectionManager.ConfirmSelections();
+                        }
+                    }
+                }
+                else {
+                    // clicked outside - optionally unselect when not multipleSelection
+                    if (!selectionManager.MultipleSelection) {
+                        //UnselectAll();
+                    }
+                }
+            }
 
-        //     if (lastMousePos == worldPoint3D) {
-        //         return;
-        //     }
-        //     lastMousePos = worldPoint3D;
+            if (lastMousePos == worldPoint3D) {
+                return;
+            }
+            lastMousePos = worldPoint3D;
 
-        //     if (hitSelection == null) {
-        //         if (selectionManager.HoveredSelection != null) selectionManager.HoveredSelection.Unhover();
-        //         selectionManager.HoveredSelection = null;
-        //         return;
-        //     }
+            if (hitSelection == null) {
+                if (selectionManager.HoveredSelection != null) selectionManager.HoveredSelection.Unhover();
+                selectionManager.HoveredSelection = null;
+                return;
+            }
 
-        //     if (hitSelection != selectionManager.HoveredSelection) {
-        //         // unhover previous
+            if (hitSelection != selectionManager.HoveredSelection) {
+                // unhover previous
 
-        //         if (selectionManager.HoveredSelection != null) selectionManager.HoveredSelection.Unhover();
+                if (selectionManager.HoveredSelection != null) selectionManager.HoveredSelection.Unhover();
 
-        //         selectionManager.HoveredSelection = hitSelection;
+                selectionManager.HoveredSelection = hitSelection;
 
-        //         if (selectionManager.HoveredSelection != null) {
-        //             // update current index if selection exists in list
-        //             int idx = GetIndexOf(selectionManager.HoveredSelection);
-        //             if (idx >= 0) selectionManager.CurrentSelectionsIndex = idx;
-        //             selectionManager.HoveredSelection.Hover();
-        //         }
-        //     }
-        // }
+                if (selectionManager.HoveredSelection != null) {
+                    // update current index if selection exists in list
+                    int idx = GetIndexOf(selectionManager.HoveredSelection);
+                    if (idx >= 0) selectionManager.CurrentSelectionsIndex = idx;
+                    selectionManager.HoveredSelection.Hover();
+                }
+            }
+        }
 
-        // private void Awake() {
-        //     cachedMainCamera = Camera.main;
+        private void Awake() {
+            cachedMainCamera = Camera.main;
 
-        //     if (selectionManager == null) {
-        //         selectionManager = GetComponent<SelectionManager>();
-        //     }
-        // }
+            if (selectionManager == null) {
+                selectionManager = GetComponent<SelectionManager>();
+            }
+        }
 
-        // private void Update() {
-        //     if (useKeyboard) {
-        //         HandleKeyboard();
-        //     }
+        private void Update() {
+            if (useKeyboard) {
+                HandleKeyboard();
+            }
 
-        //     if (useMouse) {
-        //         HandleMouse();
-        //     }
-        // }
+            if (useMouse) {
+                HandleMouse();
+            }
+        }
     }
 }

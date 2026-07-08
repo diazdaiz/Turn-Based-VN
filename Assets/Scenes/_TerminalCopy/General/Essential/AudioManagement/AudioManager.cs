@@ -16,6 +16,22 @@ public partial class AudioManager : MonoBehaviour {
         musicPlayer.Repeat = MusicPlayer.RepeatMusic.Playlist;
     }
 
+    public void PlayMusic() {
+        musicPlayer.Play();
+    }
+
+    public void PlayMusic(List<AudioClip> playlist, int playAtIndex) {
+        musicPlayer.Play(playlist, playAtIndex);
+    }
+
+    public void PlayMusic(AudioClip music) {
+        musicPlayer.Play(music);
+    }
+
+    public void PlayMusic(int index) {
+        musicPlayer.Play(index);
+    }
+
     public void PlayOneShot(AudioClip clip) {
         oneTimePlayer.Play(clip);
     }

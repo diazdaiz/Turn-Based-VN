@@ -19,8 +19,8 @@ public class DamageSources {
         }
     }
 
-    public class Poison : DamageSource {
-        public Poison(CharacterCombat receiver, int damage) : base(receiver, damage, false) { }
+    public class Burn : DamageSource {
+        public Burn(CharacterCombat receiver, int damage) : base(receiver, damage, false) { }
     }
 
     public class AnonymousDamage : DamageSource {

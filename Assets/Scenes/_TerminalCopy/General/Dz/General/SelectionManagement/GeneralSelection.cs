@@ -1,9 +1,11 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public partial class GeneralSelection : Selectable {
     [SerializeField] bool enable = true;
 
     [SerializeField] SpriteRenderer spriteRenderer;
+    [SerializeField] Image image;
     [SerializeField] Sprite normalSprite;
     [SerializeField] Sprite hoverSprite;
     [SerializeField] Sprite selectedSprite;
@@ -67,7 +69,7 @@ public partial class GeneralSelection : Selectable {
     }
 
     void UpdateVisual(bool immediate = false) {
-        if (spriteRenderer == null) return;
+        if (spriteRenderer == null && image == null) return;
 
         Sprite sprite = null;
 
@@ -86,7 +88,8 @@ public partial class GeneralSelection : Selectable {
         }
 
         if (immediate || sprite != lastAppliedSprite) {
-            spriteRenderer.sprite = sprite;
+            if (spriteRenderer != null) spriteRenderer.sprite = sprite;
+            if (image.sprite != null) image.sprite = sprite;
             lastAppliedSprite = sprite;
         }
     }
