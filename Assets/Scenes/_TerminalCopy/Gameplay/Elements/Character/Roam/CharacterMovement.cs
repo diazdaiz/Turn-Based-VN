@@ -1,7 +1,7 @@
 using UnityEngine;
 
 public class CharacterMovement : MonoBehaviour {
-    public Vector2 Direction { get; private set; } = new Vector2(-1f, 0f);
+    public Vector2 Direction { get; private set; }
     public float Speed { get; private set; }
     public float WalkSpeed => walkSpeed;
     public float RunSpeed => runSpeed;
@@ -12,6 +12,11 @@ public class CharacterMovement : MonoBehaviour {
 
     private void Awake() {
         rb = GetComponentInParent<Rigidbody>();
+    }
+
+    private void Start() {
+        float angle = transform.parent.eulerAngles.y;
+        Direction = new Vector2(Mathf.Cos(Mathf.PI * angle / 180f), Mathf.Sin(Mathf.PI * angle / 180f));
     }
 
     public void Move(Vector2 dir, bool running) {

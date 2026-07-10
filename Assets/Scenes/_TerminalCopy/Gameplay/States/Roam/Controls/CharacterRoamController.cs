@@ -1,16 +1,31 @@
 using UnityEngine;
 
 public class CharacterRoamController : MonoBehaviour {
+    public Character Character {
+        get {
+            return character;
+        }
+        set {
+            if (value.gameObject.activeInHierarchy) {
+                character = value;
+            }
+            else {
+                Character newCharacter = Instantiate(character);
+                newCharacter.gameObject.SetActive(true);
+                character = newCharacter;
+            }
+        }
+    }
     float MouseSensitivity => mouseSensitivity * mouseSensitivityDefaultMultiplier;
     CharacterMovement Movement => character.Movement;
 
     [SerializeField] Character character;
-    [SerializeField] Transform TPVCameraHolder; //ThirdPersonViewCameraAxis
+    [SerializeField] Transform TPVCameraHolder; //ThirdPersonViewCameraHolder
+    [SerializeField] Transform TPVCameraAxis; //ThirdPersonViewCameraAxis
     [SerializeField] float mouseSensitivity = 1f;
 
     float mouseSensitivityDefaultMultiplier = 0.22f;
-    Transform TPVCameraAxis; //ThirdPersonViewCameraAxis
-    Camera TPVCamera; //ThirdPersonViewCameraAxis
+    Camera TPVCamera; //ThirdPersonViewCamera
     bool cursorLockAndHide = true;
 
     private void Awake() {
@@ -19,6 +34,16 @@ public class CharacterRoamController : MonoBehaviour {
     }
 
     private void Update() {
+        MovementUpdate();
+    }
+
+    //codingan sementara untuk mempercepat langsung ke dialogue & fight
+    public void SetCamera(float angle) {
+        TPVCameraHolder.position = character.transform.position;
+        TPVCameraAxis.transform.rotation = Quaternion.Euler(TPVCameraAxis.transform.eulerAngles.x, angle, TPVCameraAxis.transform.eulerAngles.z);
+    }
+
+    void MovementUpdate() {
         //Note: awalnya mau bisa di-disable, tapi engga perlu deng
         //if (Input.GetKeyDown(KeyCode.Escape)) {
         //    cursorLockAndHide = !cursorLockAndHide;
@@ -38,6 +63,10 @@ public class CharacterRoamController : MonoBehaviour {
         dir += Input.GetKey(KeyCode.S) ? RotatedDir(CameraToCharacterdir, -180 * Mathf.PI / 180) : Vector2.zero;
         dir += Input.GetKey(KeyCode.D) ? RotatedDir(CameraToCharacterdir, -270 * Mathf.PI / 180) : Vector2.zero;
         Movement.Move(dir, Input.GetKey(KeyCode.LeftShift));
+    }
+
+    void InteractionUpdate() {
+        //
     }
 
     Vector2 RotatedDir(Vector2 dir, float tetha) {

@@ -152,6 +152,31 @@ public class CombatAction : Task {
         }
     }
 
+    public class Delay : CombatAction {
+        float delay;
+        float timer;
+
+        public Delay(float second) {
+            this.delay = second;
+        }
+
+        public override void Start() {
+            base.Start();
+            if (!isRunning) {
+                return;
+            }
+            timer = 0;
+        }
+
+        public override void Update(float dt) {
+            base.Update(dt);
+            timer += dt;
+            if (timer > delay) {
+                Finish();
+            }
+        }
+    }
+
     #region Actions
     public class StartCombat : CombatAction {
         //misal kyk efek nambah orb untuk player, atau efek nambah draw player, dll
@@ -188,11 +213,32 @@ public class CombatAction : Task {
         }
 
         public override void Finish() {
-            base.Finish();
-            CharacterTurn characterTurn = combat.CharacterTurnsInOrder[1];
             combat.CharacterTurnsInOrder.RemoveAt(0);
-            combat.DoAfter(characterTurn, this);
-            combat.CurrentCharacterTurn = characterTurn;
+            combat.AddCharacterTurn(Character);
+
+            combat.DoAfter(combat.CharacterTurnsInOrder[0], this);
+            combat.CurrentCharacterTurn = combat.CharacterTurnsInOrder[0];
+
+            base.Finish();
+        }
+    }
+
+    public class FinishTurn : CombatAction {
+        CharacterTurn characterTurn;
+
+        public FinishTurn(CharacterTurn characterTurn) {
+            this.characterTurn = characterTurn;
+        }
+
+        public override void Start() {
+            base.Start();
+            if (!isRunning) {
+                return;
+            }
+
+
+
+            Finish();
         }
     }
 
@@ -278,6 +324,7 @@ public class CombatAction : Task {
             }
             if (Source.AffectedByBlock) {
                 int damage = Source.Damage;
+                Receiver.HP -= damage;
                 //if (damage > Receiver.block) {
                 //    damage -= Receiver.block;
                 //    Receiver.block = 0;
@@ -537,6 +584,7 @@ public class CombatAction : Task {
             }
             combat.IsCombating = false;
             combat.ResetCombat();
+
             Debug.Log("Ending Combat!");
             Finish();
         }

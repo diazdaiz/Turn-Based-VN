@@ -10,5 +10,6 @@ public partial class Game : MonoBehaviour {
         Data = GetComponentInChildren<GameDataManager>();
         Audio = GetComponent<AudioManager>();
         Scene = GetComponent<GameSceneManager>();
+        Display.displays[1].Activate();
     }
 }

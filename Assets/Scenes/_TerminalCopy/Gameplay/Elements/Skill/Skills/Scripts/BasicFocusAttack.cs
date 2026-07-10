@@ -4,7 +4,11 @@ using UnityEngine;
 public class BasicFocusAttack : Skill {
     public static Dictionary<CharacterCombat, CharacterCombat> CharacterFocusingOtherCharacter;
 
-    [SerializeField] int damagePercentage = 120;
+    [SerializeField] int damagePercentage = 100;
+
+    private void Start() {
+        CharacterFocusingOtherCharacter = new();
+    }
 
     public override List<CombatAction> Activate(CharacterCombat caster, CharacterCombat target) {
         int stack = 0;
@@ -16,7 +20,7 @@ public class BasicFocusAttack : Skill {
             stack = caster.Statuses[typeof(Status.Artist)].Stack;
         }
         return new() {
-            new CombatAction.Attack(caster, new List<CharacterCombat>(Combat.EnemyTeam), 50 * (int)Mathf.Pow(2,stack))
+            new CombatAction.Attack(caster, target, damagePercentage)
         };
     }
 }

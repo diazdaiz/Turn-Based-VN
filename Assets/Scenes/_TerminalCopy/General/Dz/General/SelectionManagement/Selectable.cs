@@ -8,6 +8,7 @@ public partial class Selectable : Selection {
     public void Update() {
         Collider collider = GetComponentInChildren<Collider>();
         if (Mouse.HoveredObject == this) {
+            Debug.Log(name);
             if (hoveredObject == this) {
 
             }

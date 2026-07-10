@@ -22,6 +22,7 @@ public class CharacterCombat : MonoBehaviour {
         }
     }
     public bool isAlive => HP > 0;
+    public Sprite Portrait => portrait;
 
     public Action<CombatAction.CharacterTurn> OnTurnStart;
     public Action<CombatAction.Attack> OnAttack;
@@ -30,6 +31,7 @@ public class CharacterCombat : MonoBehaviour {
 
     [SerializeField] CharacterStats stats;
     [SerializeField] List<Skill> skills = new();
+    [SerializeField] Sprite portrait;
 
     [Serializable]
     public class CharacterStats {
@@ -62,6 +64,7 @@ public class CharacterCombat : MonoBehaviour {
             ATK = stats.ATK,
             DEF = stats.DEF,
         };
+        MaxHealth = HP;
         if (initialStatuses == null) {
             initialStatuses = new();
         }
@@ -73,7 +76,7 @@ public class CharacterCombat : MonoBehaviour {
     public void InitiateSkills() {
         Skills = new();
         for (int i = 0; i < skills.Count; i++) {
-            Skills.Add(Instantiate(skills[i]));
+            Skills.Add(Instantiate(skills[i].gameObject).GetComponent<Skill>());
         }
     }
 

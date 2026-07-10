@@ -30,44 +30,46 @@ public partial class CombatManager : MonoBehaviour {
             maxSkillPoint = value;
         }
     }
-    public int SkillPoint { get; set; }
+    public int SkillPoint { get; set; } = 0;
     public bool IsCombating { get; set; } // combating combating combating combating combating combating
+    public GameObject Canvas => canvas;
 
-    [SerializeField] bool testCombat = false;
     [SerializeField] int maxSkillPoint = 5;
     [SerializeField] int startingSkillPoint = 3;
-    [SerializeField] PlayerCombatController cardSelection;
+    [SerializeField] GameObject canvas;
+    //[SerializeField] PlayerCombatController skillSelection;
 
     CombatActionManager combatActionManager;
 
-    #region Methods
-    #region Initiate combat properties
     public void SetCombatInitialProperties(List<CharacterCombat> playerTeam, List<CharacterCombat> enemyTeam, bool Ambushed) {
         ResetCombat();
+        PlayerTeam = playerTeam;
         for (int i = 0; i < playerTeam.Count; i++) {
-            PlayerTeam.Add(playerTeam[i]);
             PlayerTeam[i].InitiateSkills();
             PlayerTeam[i].SubscribeCombatEvents();
+            AddCharacterTurn(playerTeam[i], Ambushed);
         }
+        EnemyTeam = enemyTeam;
         for (int i = 0; i < EnemyTeam.Count; i++) {
             EnemyTeam[i].InitiateSkills();
             EnemyTeam[i].SubscribeCombatEvents();
-            EnemyTeam[i].ActionValue = (int)(10000f / EnemyTeam[i].Stats.SPD);
+            //EnemyTeam[i].ActionValue = (int)(10000f / EnemyTeam[i].Stats.SPD);
+            AddCharacterTurn(enemyTeam[i]);
         }
         SkillPoint = startingSkillPoint;
     }
-    #endregion
 
     #region Combat
     public void StartCombat() {
+        canvas.SetActive(true);
         Do(new CombatAction.StartCombat());
         IsCombating = true;
     }
 
     public void AddCharacterTurn(CharacterCombat character, bool Ambushed = false) {
-        character.ActionValue = (int)(10000f / character.Stats.SPD * (Ambushed ? 1.2f : 1f));
+        character.ActionValue += (int)(10000f / character.Stats.SPD * (Ambushed ? 1.2f : 1f));
         for (int i = 0; i < CharacterTurnsInOrder.Count; i++) {
-            if (CharacterTurnsInOrder[0].Character.ActionValue < character.ActionValue) {
+            if (CharacterTurnsInOrder[i].Character.ActionValue < character.ActionValue) {
                 continue;
             }
             if (PlayerTeam.Contains(character) || EnemyTeam.Contains(character)) {
@@ -91,8 +93,8 @@ public partial class CombatManager : MonoBehaviour {
         if (receiver != null) {
             vulnerable = receiver.Statuses.ContainsKey(typeof(Status.Vulnerable));
         }
-        int damage = Mathf.FloorToInt((damagePercentage * attacker.Stats.ATK + strength) * (weak ? 0.75f : 1f) * (vulnerable ? 1.5f : 1f));
-
+        int damage = Mathf.FloorToInt((damagePercentage / 100f * attacker.Stats.ATK + strength) * (weak ? 0.75f : 1f) * (vulnerable ? 1.5f : 1f) * 250f / receiver.Stats.DEF);
+        Debug.Log(damage);
         // ga bisa kurang dari 0
         return Mathf.Max(0, damage);
     }
@@ -174,22 +176,28 @@ public partial class CombatManager : MonoBehaviour {
     public void ResetCombat() {
         SkillPoint = 0;
 
-        for (int i = 0; i < PlayerTeam.Count; i++) {
-            for (int j = PlayerTeam[i].Skills.Count - 1; j >= 0; j--) {
-                Destroy(PlayerTeam[i].Skills[j]);
+        if (PlayerTeam != null) {
+            for (int i = 0; i < PlayerTeam.Count; i++) {
+                for (int j = PlayerTeam[i].Skills.Count - 1; j >= 0; j--) {
+                    Destroy(PlayerTeam[i].Skills[j]);
+                }
+                PlayerTeam[i].Skills = new();
+                PlayerTeam[i].Statuses = new();
+                PlayerTeam[i].ActionValue = 0;
             }
-            PlayerTeam[i].Skills = new();
-            PlayerTeam[i].Statuses = new();
         }
-        for (int i = 0; i < EnemyTeam.Count; i++) {
-            for (int j = EnemyTeam[i].Skills.Count - 1; j >= 0; j--) {
-                Destroy(EnemyTeam[i].Skills[j]);
+        if (EnemyTeam != null) {
+            for (int i = 0; i < EnemyTeam.Count; i++) {
+                for (int j = EnemyTeam[i].Skills.Count - 1; j >= 0; j--) {
+                    Destroy(EnemyTeam[i].Skills[j]);
+                }
+                EnemyTeam[i].Skills = new();
+                EnemyTeam[i].Statuses = new();
+                EnemyTeam[i].ActionValue = 0;
             }
-            EnemyTeam[i].Skills = new();
-            EnemyTeam[i].Statuses = new();
         }
         CombatAction.ResetTiggers();
-        // CombatAction.
+        //// CombatAction.
         PlayerTeam = new();
         EnemyTeam = new();
         CharacterTurnsInOrder = new();
@@ -206,41 +214,17 @@ public partial class CombatManager : MonoBehaviour {
         else {
             Instance = this;
         }
-
-        ResetCombat();
-
-        if (testCombat) {
-            Do(new CombatAction.StartCombat());
-        }
     }
 
     public void Update() {
-        combatActionManager.Update(Time.deltaTime);
+        if (combatActionManager != null) {
+            combatActionManager.Update(Time.deltaTime);
+        }
     }
 
     public void FixedUpdate() {
-        combatActionManager.FixedUpdate(Time.fixedDeltaTime);
+        if (combatActionManager != null) {
+            combatActionManager.FixedUpdate(Time.fixedDeltaTime);
+        }
     }
-    #endregion
-
-    #region kotretan
-    // (abaikan)
-    //trigger ada yang before ada yang after
-    // when some combat action activated, which is when started, trigger yang before & after
-    // tapi action combatnya baru kebuat ditambahin, tiap action combat punya tipe
-    // berarti action combat yang ke trigger dari action combat lain, harusnya subscribe ke typenya
-    // apabila ada type action combat yang started, baru tambahin itu (sebelum atau setelah)
-    // berarti... before dan after sudah di predefined 
-    // type a before type b, c setelah b dll di combat action
-    // namun aktivasinya (adding combat action sebelum/setelah) saat combat action triggered
-    // berarti before & after di defini aja type action apa trigger type action apa???
-    // ^ ga jadi, subscribe & unsubscribenya berdasarkan apakah status/relic sedang aktif atau engga
-    // berarti, penambahan before after trigger kebuat dari 
-    // saat started, if punya before, add action itu dlu, ga jadi start (udah bener kyk skrg)
-    // saat finish, tambahin juga afternya
-
-    //trigger, trigger punya list dari semua tipe combatAction
-    //ada combat Action yang subscribe ke trigger, ada combat action yang activate trigger
-    //tiap combat action cuman triggered sekali
-    #endregion
 }
